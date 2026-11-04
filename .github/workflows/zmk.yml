@@ -1,52 +1,87 @@
-on: [workflow_dispatch]
+name: Fix Structure and Build Keyball61
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
     steps:
-      - name: Checkout user config
+      - name: Checkout User Repository
         uses: actions/checkout@v4
+        with:
+          path: src_repo
 
-      - name: Initialize west workspace (Force Clean Setup)
+      - name: Fix and Unify Directory Structure
         run: |
-          pip3 install west
-          URL1="https://github.com"
-          URL2="zmkfirmware"
-          URL3="zmk.git"
-          FULL_GIT_URL="${URL1}/${URL2}/${URL3}"
-          
-          git clone --branch main "$FULL_GIT_URL" zmk_workspace
-          cd zmk_workspace
-          west init -l app/
-          west update
+          # 1. ZMKが認識できる理想のconfig構造の土台を作成
+          mkdir -p unified_config/config/boards/shields/keyball61
+
+          # 2. 現在の配置パターンに合わせてファイルを自動移動
+          if [ -d "src_repo/config" ]; then
+            # すでにconfig/ ディレクトリがある場合は中身を丸ごとコピー
+            cp -r src_repo/config/* unified_config/config/
+          else
+            # ルートにバラバラに置かれている場合の救済配置
+            [ -f src_repo/keyball61.keymap ] && cp src_repo/keyball61.keymap unified_config/config/
+            # keyball61関連のシールドファイルを移動
+            cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
+          fi
+
+          # 3. 正しいWestの仕様（url-base）に合わせてwest.ymlを生成
+          cat << 'EOF' > unified_config/config/west.yml
+          manifest:
+            remotes:
+              - name: zmkfirmware
+                url-base: https://github.com
+            projects:
+              - name: zmk
+                remote: zmkfirmware
+                revision: main
+                import: app/west.yml
+            self:
+              path: config
+          EOF
+
+          # 確認用に整形後の構造をログ出力
+          echo "=== Fixed Directory Structure ==="
+          find unified_config
+
+      - name: Initialize West Workspace
+        working-directory: unified_config
+        run: |
+          west init -l config
+
+      - name: West Update (高速・安定版)
+        working-directory: unified_config
+        run: |
+          west update -n -o="--depth=1"
           west zephyr-export
 
-      - name: Install Zephyr toolchain (v0.16.8 for Zephyr v4)
+      - name: Build Keyball61 Left (左手用)
+        working-directory: unified_config
         run: |
-          # 最新のZephyr OSに完全に適合するSDK v0.16.8を指定
-          SDK_HOST="https://github.com"
-          SDK_PATH="zephyrproject-rtos/sdk-ng/releases/download/v0.16.8"
-          SDK_FILE="zephyr-sdk-0.16.8_linux-x86_64_minimal.tar.xz"
-          FULL_SDK_URL="${SDK_HOST}/${SDK_PATH}/${SDK_FILE}"
-          
-          wget "$FULL_SDK_URL"
-          tar -xf zephyr-sdk-0.16.8_linux-x86_64_minimal.tar.xz
-          ./zephyr-sdk-0.16.8/setup.sh -t arm-zephyr-eabi -c
+          # -- -Wno-dev を付与してPython3.14環境によるCMakeのパースエラーを抑制
+          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DZMK_CONFIG="${GITHUB_WORKSPACE}/unified_config/config" -Wno-dev
+          mv build/zephyr/zmk.uf2 ../keyball61_left.uf2
 
-      - name: Inject Keyball61 Right configuration
+      - name: Build Keyball61 Right (右手用)
+        working-directory: unified_config
         run: |
-          mkdir -p zmk_workspace/app/boards/shields/keyball61
-          cp -r config/* zmk_workspace/app/boards/shields/keyball61/
+          # -- -Wno-dev を付与してPython3.14環境によるCMakeのパースエラーを抑制
+          west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DZMK_CONFIG="${GITHUB_WORKSPACE}/unified_config/config" -Wno-dev
+          mv build_right/zephyr/zmk.uf2 ../keyball61_right.uf2
 
-      - name: Build Keyball61 Right Firmware (ZMK Studio Enabled)
-        run: |
-          # 読み込むSDKフォルダ名を0.16.8へ変更
-          export ZEPHYR_SDK_INSTALL_DIR=$(pwd)/zephyr-sdk-0.16.8
-          cd zmk_workspace
-          west build -s app -b nice_nano/nrf52840 -- -DSHIELD=keyball61_right -DZMK_CONFIG=$(pwd)/app/boards/shields/keyball61
-
-      - name: Upload Firmware Artifact
+      - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: keyball61_right_v2_with_studio
-          path: zmk_workspace/build/zephyr/zmk.uf2
+          name: keyball61-zmk-firmware
+          path: |
+            keyball61_left.uf2
+            keyball61_right.uf2
