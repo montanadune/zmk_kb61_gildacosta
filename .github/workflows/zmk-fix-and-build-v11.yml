@@ -42,9 +42,9 @@ manifest:
       url: https://github.com/zmkfirmware/zmk
       revision: main
       import: app/west.yml
-            self:
-              path: config
-          EOF
+  self:
+    path: config
+EOF
 
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
@@ -80,4 +80,3 @@ manifest:
           path: |
             keyball61_left.uf2
             keyball61_right.uf2
-
