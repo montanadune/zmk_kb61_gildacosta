@@ -29,19 +29,25 @@ jobs:
             cp -r src_repo/config/* unified_config/config/
           else
             # ルートにバラバラに置かれている場合の救済配置
-            [ -f src_repo/west.yml ] && cp src_repo/west.yml unified_config/config/
             [ -f src_repo/keyball61.keymap ] && cp src_repo/keyball61.keymap unified_config/config/
             # keyball61関連のシールドファイルを移動
             cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
           fi
 
-          # 3. 【エラー対策】west.yml 内の不正なZMKリポジトリ参照先を公式リポジトリに書き換える
-          if [ -f "unified_config/config/west.yml" ]; then
-            echo "=== Patching west.yml ==="
-            # stlimtat/zmk などの記述を zmkfirmware/zmk に強制置換
-            sed -i 's|remote: stlimtat|remote: zmkfirmware|g' unified_config/config/west.yml 2>/dev/null || true
-            sed -i 's|url: https://github.com/stlimtat/zmk|url: https://github.com|g' unified_config/config/west.yml 2>/dev/null || true
-          fi
+          # 3. 【エラーの根本解決】エラー原因となるwest.ymlを、動作実績のある標準的な内容で完全に新規作成（上書き）する
+          cat << 'EOF' > unified_config/config/west.yml
+          manifest:
+            remotes:
+              - name: zmkfirmware
+                url: https://github.com
+            projects:
+              - name: zmk
+                remote: zmkfirmware
+                revision: main
+                import: app/west.yml
+            self:
+              path: config
+          EOF
 
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
@@ -79,3 +85,4 @@ jobs:
           path: |
             keyball61_left.uf2
             keyball61_right.uf2
+
