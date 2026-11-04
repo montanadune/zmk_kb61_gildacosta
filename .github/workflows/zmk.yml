@@ -39,12 +39,10 @@ jobs:
           manifest:
             projects:
               - name: zmk
-                url: https://github.com
+                url: https://github.com/zmkfirmware/zmk
                 revision: main
                 import: app/west.yml
-            self:
-              path: config
-          EOF
+
 
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
