@@ -1,51 +1,42 @@
 name: Build Firmware
-
 on: [push, pull_request, workflow_dispatch]
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    container:
-      image: zmkfirmware/zmk-build-arm:stable # ZMKのビルド用公式コンテナを使用
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache west modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-zephyr-modules
-        with:
-          path: |
-            modules/
-            zmk/
-            .west/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('config/west.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-
-      - name: Initialize west workspace
-        run: west init -l config
-
-      - name: Update modules
-        run: west update
-
-      - name: Export Zephyr CMake package
-        run: west zephyr-export
-
-      # --- ここから環境に合わせたビルドコマンド ---
-      # ※ Keyball61の左右をそれぞれビルドする例です（シールド名やボード名はご自身の環境に合わせてください）
-      - name: Build Right (Master)
-        run: west build -b nice_nano_v2 -- -DSHIELD=keyball61_right
-
-      - name: Build Left (Slave)
-        run: west build -b nice_nano_v2 -d build/left -- -DSHIELD=keyball61_left
-
-      # --- ビルドされたuf2ファイルを成果物として保存 ---
-      - name: Archive firmware
-        uses: actions/artifacts@v4
-        with:
-          name: keyball61-firmware
-          path: |
-            build/zephyr/zmk.uf2
-            build/left/zephyr/zmk.uf2
+build:
+runs-on: ubuntu-latest
+container:
+image: zmkfirmware/zmk-build-arm:stable # ZMKのビルド用公式コンテナを使用
+steps:
+- name: Checkout
+uses: actions/checkout@v4
+- name: Cache west modules
+uses: actions/cache@v4
+env:
+cache-name: cache-zephyr-modules
+with:
+path: |
+modules/
+zmk/
+.west/
+key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('config/west.yml') }}
+restore-keys: |
+${{ runner.os }}-build-${{ env.cache-name }}-
+- name: Initialize west workspace
+run: west init -l config
+- name: Update modules
+run: west update
+- name: Export Zephyr CMake package
+run: west zephyr-export
+# --- ここからビルドコマンド ---
+# ※ ボードやシールド名が異なる場合は、環境に合わせて調整してください
+- name: Build Right (Master)
+run: west build -b nice_nano_v2 -- -DSHIELD=keyball61_right
+- name: Build Left (Slave)
+run: west build -b nice_nano_v2 -d build/left -- -DSHIELD=keyball61_left
+# --- 【修正箇所】成果物（UF2）の保存 ---
+- name: Archive firmware
+uses: actions/upload-artifact@v4
+with:
+name: keyball61-firmware
+path: |
+build/zephyr/zmk.uf2
+build/left/zephyr/zmk.uf2
