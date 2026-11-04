@@ -34,17 +34,17 @@ jobs:
             cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
           fi
 
-          # 3. 【最重要】結合エラーを永久に防ぐ、フルパス直指定の標準west.ymlを生成
+          # 3. 【インデントエラー対策】行頭の空白を完全に排除して正規のwest.ymlを生成
           cat << 'EOF' > unified_config/config/west.yml
-          manifest:
-            projects:
-              - name: zmk
-                url: https://github.com
-                revision: main
-                import: app/west.yml
-            self:
-              path: config
-          EOF
+manifest:
+  projects:
+    - name: zmk
+      url: https://github.com/zmkfirmware/zmk
+      revision: main
+      import: app/west.yml
+  self:
+    path: config
+EOF
 
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
@@ -58,21 +58,18 @@ jobs:
       - name: West Update (高速・安定版)
         working-directory: unified_config
         run: |
-          # 引数エラーを回避しつつ、コミット履歴を1つに絞って高速ダウンロード
           west update -n -o="--depth=1"
           west zephyr-export
 
       - name: Build Keyball61 Left (左手用)
         working-directory: unified_config
         run: |
-          # Python3.14環境によるCMakeのエラーを -Wno-dev で抑制
           west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DZMK_CONFIG="${GITHUB_WORKSPACE}/unified_config/config" -Wno-dev
           mv build/zephyr/zmk.uf2 ../keyball61_left.uf2
 
       - name: Build Keyball61 Right (右手用)
         working-directory: unified_config
         run: |
-          # Python3.14環境によるCMakeのエラーを -Wno-dev で抑制
           west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DZMK_CONFIG="${GITHUB_WORKSPACE}/unified_config/config" -Wno-dev
           mv build_right/zephyr/zmk.uf2 ../keyball61_right.uf2
 
