@@ -44,7 +44,7 @@ manifest:
       import: app/west.yml
   self:
     path: config
-EOF
+ EOF
 
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
