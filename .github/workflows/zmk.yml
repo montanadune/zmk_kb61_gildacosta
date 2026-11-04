@@ -10,7 +10,7 @@ jobs:
       - name: Initialize west workspace (Force Clean Setup)
         run: |
           pip3 install west
-          # 完全に正しいZMK公式リポジトリのフルURLを指定してクローン
+          # 完全に繋がった正しい公式フルURLを指定してクローンを実行
           git clone --branch main https://github.com zmk_workspace
           cd zmk_workspace
           west init -l app/
