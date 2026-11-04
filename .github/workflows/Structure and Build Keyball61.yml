@@ -1,5 +1,3 @@
-name: zmk-build
-
 on: [workflow_dispatch]
 
 jobs:
