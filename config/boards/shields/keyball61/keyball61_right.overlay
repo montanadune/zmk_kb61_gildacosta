@@ -6,8 +6,9 @@
  
 #include "keyball61.dtsi"
 
+// 右手単独動作のため、列のオフセット（+7）を完全に無効化（0に変更）
 &default_transform {
-    col-offset = <7>;
+    col-offset = <0>;
 };
 
 &kscan0 {
@@ -19,13 +20,15 @@
         , <&pro_micro 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
         ;
     
-	col-gpios
-        = <&pro_micro 9  GPIO_ACTIVE_HIGH>
-        , <&pro_micro 8  GPIO_ACTIVE_HIGH>
-        , <&pro_micro 18 GPIO_ACTIVE_HIGH>
-        , <&pro_micro 19 GPIO_ACTIVE_HIGH>
-        , <&pro_micro 20 GPIO_ACTIVE_HIGH>
-        , <&pro_micro 21 GPIO_ACTIVE_HIGH>
+    // COL3をGP15(14)からGP17(15)へ変更し、親指キー復活のために7本目のピン(10)を追加
+    col-gpios
+        = <&pro_micro 9  GPIO_ACTIVE_HIGH> // COL0
+        , <&pro_micro 8  GPIO_ACTIVE_HIGH> // COL1
+        , <&pro_micro 18 GPIO_ACTIVE_HIGH> // COL2
+        , <&pro_micro 15 GPIO_ACTIVE_HIGH> // COL3 (GP15からGP17[ProMicro 15番]へ変更)
+        , <&pro_micro 19 GPIO_ACTIVE_HIGH> // COL4
+        , <&pro_micro 20 GPIO_ACTIVE_HIGH> // COL5
+        , <&pro_micro 10 GPIO_ACTIVE_HIGH> // COL6 (親指キー用に消えていた7本目を追加)
         ;
 };
 
@@ -113,7 +116,5 @@
   trackball_listener {
     compatible = "zmk,input-listener";
     device = <&trackball>;
-
   };
 };
-
