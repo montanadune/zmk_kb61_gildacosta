@@ -1,88 +1,68 @@
-name: Fix Structure and Build Keyball61
+name: Build Keyball61 Right Hand Only with VIAL
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: zmkfirmware/zmk-build-arm:stable
+    container: ghcr.io/qmk/qmk_cli:latest
+
     steps:
-      - name: Checkout User Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          path: src_repo
+          submodules: recursive
 
-      - name: Fix and Unify Directory Structure
+      - name: Disable git safe directory checks
+        run: git config --global --add safe.directory '*'
+
+      - name: Fix QMK CLI & Source Code Internal Python Bug
         run: |
-          # 1. ZMKが認識できる理想のconfig構造の土台を作成
-          mkdir -p unified_config/config/boards/shields/keyball61
+          # 1. コンテナ側のシステムPythonライブラリのバグを修正
+          SYS_MATH_PY="/usr/local/lib/python3.14/site-packages/qmk/math.py"
+          [ -f "$SYS_MATH_PY" ] && sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$SYS_MATH_PY"
+          
+          # 2. リポジトリのソースコード側（lib/python/qmk/math.py）のバグを修正
+          REPO_MATH_PY="lib/python/qmk/math.py"
+          [ -f "$REPO_MATH_PY" ] && sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$REPO_MATH_PY"
 
-          # 2. 現在の配置パターンに合わせてファイルを自動移動
-          if [ -d "src_repo/config" ]; then
-            # すでにconfig/ ディレクトリがある場合は中身を丸ごとコピー
-            cp -r src_repo/config/* unified_config/config/
-          else
-            # ルートにバラバラに置かれている場合の救済配置
-            [ -f src_repo/keyball61.keymap ] && cp src_repo/keyball61.keymap unified_config/config/
-            # keyball61関連のシールドファイルを移動
-            cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
+      - name: Configure Hardware & Enable VIAL (Right Hand & GP17)
+        run: |
+          CONFIG_FILE="keyboards/keyball/keyball61/config.h"
+          
+          # 既存の MASTER_LEFT 定義があれば削除し、MASTER_RIGHT を安全に追記
+          sed -i '/#define MASTER_LEFT/d' "$CONFIG_FILE"
+          echo "#define MASTER_RIGHT" >> "$CONFIG_FILE"
+          
+          # 既存の MATRIX_COL_PINS 定義を無効化（undef）した上で、新しいピン配列を追記
+          # ※ 親指キーを復活させるため、消えていた7本目のピン（GP12）を末尾に追加しています
+          echo "#undef MATRIX_COL_PINS" >> "$CONFIG_FILE"
+          echo "#define MATRIX_COL_PINS { GP20, GP19, GP18, GP17, GP14, GP13, GP12 }" >> "$CONFIG_FILE"
+
+          # VIAL用のキーマップディレクトリを新規作成
+          mkdir -p keyboards/keyball/keyball61/keymaps/vial
+          
+          # デフォルトのキーマップファイルをVIAL用ディレクトリに複製
+          if [ -d "keyboards/keyball/keyball61/keymaps/default" ]; then
+            cp -r keyboards/keyball/keyball61/keymaps/default/* keyboards/keyball/keyball61/keymaps/vial/ 2>/dev/null || true
           fi
+          
+          # VIALおよびVIA機能を有効化する設定を rules.mk に書き込む
+          RULES_FILE="keyboards/keyball/keyball61/keymaps/vial/rules.mk"
+          echo "VIA_ENABLE = yes" >> "$RULES_FILE"
+          echo "VIAL_ENABLE = yes" >> "$RULES_FILE"
+          echo "LTO_ENABLE = yes" >> "$RULES_FILE"
 
-          # 3. 正しいWestの仕様（url-base）に合わせてwest.ymlを生成
-          cat << 'EOF' > unified_config/config/west.yml
-          manifest:
-            remotes:
-              - name: zmkfirmware
-                url-base: https://github.com
-            projects:
-              - name: zmk
-                remote: zmkfirmware
-                revision: main
-                import: app/west.yml
-            self:
-              path: config
-          EOF
+      - name: Compile Keyball61 with VIAL
+        run: qmk compile -kb keyball/keyball61 -km vial
 
-          # 確認用に整形後の構造をログ出力
-          echo "=== Fixed Directory Structure ==="
-          find unified_config
-
-      - name: Initialize West Workspace
-        working-directory: unified_config
-        run: |
-          # ワークスペース直下(unified_config)で初期化を行う
-          west init -l config
-
-      - name: West Update (高速・安定版)
-        working-directory: unified_config
-        run: |
-          # -n (--narrow): 必要なプロジェクトのみ同期
-          # -o="--depth=1": Gitのコミット履歴を1つだけに制限して最速ダウンロード
-          west update -n -o="--depth=1"
-          west zephyr-export
-
-      - name: Build Keyball61 Left (左手用)
-        working-directory: unified_config
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
-          mv build/zephyr/zmk.uf2 ../keyball61_left.uf2
-
-      - name: Build Keyball61 Right (右手用)
-        working-directory: unified_config
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
-          mv build_right/zephyr/zmk.uf2 ../keyball61_right.uf2
-
-      - name: Upload Firmware Artifacts
+      - name: Upload Firmware Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: keyball61-zmk-firmware
+          name: keyball61-vial-right-firmware
           path: |
-            keyball61_left.uf2
-            keyball61_right.uf2
+            *.hex
+            *.bin
+            *.uf2
+          if-no-files-found: error
