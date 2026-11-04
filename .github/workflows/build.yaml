@@ -1,5 +1,0 @@
-include:
-  - board: nice_nano_v2//zmk
-    shield: keyball61_left
-  - board: nice_nano_v2//zmk
-    shield: keyball61_right
