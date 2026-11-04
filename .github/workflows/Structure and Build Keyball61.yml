@@ -35,6 +35,14 @@ jobs:
             cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
           fi
 
+          # 3. 【エラー対策】west.yml 内の不正なZMKリポジトリ参照先を公式リポジトリに書き換える
+          if [ -f "unified_config/config/west.yml" ]; then
+            echo "=== Patching west.yml ==="
+            # stlimtat/zmk などの記述を zmkfirmware/zmk に強制置換
+            sed -i 's|remote: stlimtat|remote: zmkfirmware|g' unified_config/config/west.yml 2>/dev/null || true
+            sed -i 's|url: https://github.com/stlimtat/zmk|url: https://github.com|g' unified_config/config/west.yml 2>/dev/null || true
+          fi
+
           # 確認用に整形後の構造をログ出力
           echo "=== Fixed Directory Structure ==="
           find unified_config
