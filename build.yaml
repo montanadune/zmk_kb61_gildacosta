@@ -1,5 +1,8 @@
-include:
-  - board: nice_nano_v2//zmk
-    shield: keyball61_left
-  - board: nice_nano_v2//zmk
-    shield: keyball61_right
+name: Build Keyball61 Right Hand Only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
