@@ -1,53 +1,7 @@
 name: zmk-build
 
-on:
-  workflow_dispatch:
+on: [workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache west modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-zephyr-modules
-        with:
-          path: |
-            modules/
-            tools/
-            zephyr/
-            bootloader/
-          key: ${{ runner.os }}-build-cache-zephyr-modules-${{ hashFiles('config/west.yml') }}
-
-      - name: Initialize west workspace
-        run: |
-          pip3 install west
-          if [ ! -d ".west" ]; then
-            west init -m https://github.com --mr main .
-          fi
-          ln -sfn config config/boards/shields/keyball61 2>/dev/null || true
-
-      - name: Update modules
-        run: |
-          west update
-          west zephyr-export
-
-      - name: Install toolchain
-        run: |
-          wget https://github.com
-          tar -xf zephyr-sdk-0.16.3_linux-x86_64_minimal.tar.xz
-          ./zephyr-sdk-0.16.3/setup.sh -t arm-zephyr-eabi -c
-
-      - name: Build Keyball61 Right
-        run: |
-          export ZEPHYR_SDK_INSTALL_DIR=$(pwd)/zephyr-sdk-0.16.3
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_right -DZMK_CONFIG=$(pwd)/config
-
-      - name: Upload Firmware Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: keyball61_right_nicenano_v2
-          path: build/zephyr/zmk.uf2
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
