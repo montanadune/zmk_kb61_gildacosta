@@ -1,4 +1,4 @@
-name: "Build Keyball61"
+name: "Build"
 
 on:
   push:
@@ -9,36 +9,4 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    name: Build ZMK Firmware
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache west modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-zephyr-modules
-        with:
-          path: |
-            modules/
-            tools/
-            zephyr/
-            bootloader/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/west.yml', '**/build.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-
-      - name: Build Left Side
-        uses: zmkfirmware/zmk/actions/build-keyboard@main
-        with:
-          board: nice_nano_v2
-          shield: keyball61_left
-
-      - name: Build Right Side
-        uses: zmkfirmware/zmk/actions/build-keyboard@main
-        with:
-          board: nice_nano_v2
-          shield: keyball61_right
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
