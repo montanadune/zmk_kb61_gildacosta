@@ -55,7 +55,7 @@ EOF
         run: |
           west init -l config
 
-      - name: West Update (高速・安定版)
+      - name: West Update (高速・安定版　)
         working-directory: unified_config
         run: |
           west update -n -o="--depth=1"
