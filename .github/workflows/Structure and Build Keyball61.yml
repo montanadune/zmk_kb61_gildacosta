@@ -1,66 +1,63 @@
 name: Fix Structure and Build Keyball61
-
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
+push:
+branches: [ main, master ]
+pull_request:
+branches: [ main, master ]
+workflow_dispatch:
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    container:
-      image: zmkfirmware/zmk-build-arm:stable
-    steps:
-      - name: Checkout User Repository
-        uses: actions/checkout@v4
-        with:
-          path: src_repo
-
-      - name: Fix and Unify Directory Structure
-        run: |
-          # 1. ZMKが認識できる理想のconfig構造の土台を作成
-          mkdir -p unified_config/config/boards/shields/keyball61
-          
-          # 2. 現在の配置パターンに合わせてファイルを自動移動
-          if [ -d "src_repo/config" ]; then
-            # すでにconfig/ ディレクトリがある場合は中身を丸ごとコピー
-            cp -r src_repo/config/* unified_config/config/
-          else
-            # ルートにバラバラに置かれている場合の救済配置
-            [ -f src_repo/west.yml ] && cp src_repo/west.yml unified_config/config/
-            [ -f src_repo/keyball61.keymap ] && cp src_repo/keyball61.keymap unified_config/config/
-            # keyball61関連のシールドファイルを移動
-            cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
-          fi
-          
-          # 確認用に整形後の構造をログ出力
-          echo "=== Fixed Directory Structure ==="
-          find unified_config
-
-      - name: Initialize West Workspace
-        run: |
-          # west.ymlに基づいてZMK環境を初期化
-          west init -l unified_config/config
-          west update
-          west zephyr-export
-
-      - name: Build Keyball61 Left (左手用)
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
-          mv build/zephyr/zmk.uf2 keyball61_left.uf2
-
-      - name: Build Keyball61 Right (右手用)
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
-          mv build_right/zephyr/zmk.uf2 keyball61_right.uf2
-
-      - name: Upload Firmware Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: keyball61-zmk-firmware
-          path: |
-            keyball61_left.uf2
-            keyball61_right.uf2
-
+build:
+runs-on: ubuntu-latest
+container:
+image: zmkfirmware/zmk-build-arm:stable
+steps:
+- name: Checkout User Repository
+uses: actions/checkout@v4
+with:
+path: src_repo
+- name: Fix and Unify Directory Structure
+run: |
+# 1. ZMKが認識できる理想のconfig構造の土台を作成
+mkdir -p unified_config/config/boards/shields/keyball61
+# 2. 現在の配置パターンに合わせてファイルを自動移動
+if [ -d "src_repo/config" ]; then
+# すでにconfig/ ディレクトリがある場合は中身を丸ごとコピー
+cp -r src_repo/config/* unified_config/config/
+else
+# ルートにバラバラに置かれている場合の救済配置
+[ -f src_repo/west.yml ] && cp src_repo/west.yml unified_config/config/
+[ -f src_repo/keyball61.keymap ] && cp src_repo/keyball61.keymap unified_config/config/
+# keyball61関連のシールドファイルを移動
+cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
+fi
+# 確認用に整形後の構造をログ出力
+echo "=== Fixed Directory Structure ==="
+find unified_config
+- name: Initialize West Workspace
+working-directory: unified_config
+run: |
+# ワークスペース直下(unified_config)で初期化を行う
+west init -l config
+- name: West Update
+working-directory: unified_config
+run: |
+# ワークスペース直下でモジュールをアップデート
+west update
+west zephyr-export
+- name: Build Keyball61 Left (左手用)
+working-directory: unified_config
+run: |
+west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
+mv build/zephyr/zmk.uf2 ../keyball61_left.uf2
+- name: Build Keyball61 Right (右手用)
+working-directory: unified_config
+run: |
+west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DUSER_CONFIG_DIR="${GITHUB_WORKSPACE}/unified_config/config"
+mv build_right/zephyr/zmk.uf2 ../keyball61_right.uf2
+- name: Upload Firmware Artifacts
+uses: actions/upload-artifact@v4
+with:
+name: keyball61-zmk-firmware
+path: |
+keyball61_left.uf2
+keyball61_right.uf2
