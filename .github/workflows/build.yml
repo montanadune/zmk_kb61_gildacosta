@@ -1,8 +1,11 @@
-name: Build Keyball61 Right Hand Only
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+manifest:
+  remotes:
+    - name: zmkfirmware
+      url-base: https://github.com
+  projects:
+    - name: zmk
+      remote: zmkfirmware
+      revision: main
+      import: app/west.yml
+  self:
+    path: config
