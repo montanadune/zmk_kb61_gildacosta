@@ -1,40 +1,37 @@
-on: [workflow_dispatch]
+Run pip3 install west
+Defaulting to user installation because normal site-packages is not writeable
+Collecting west
+  Downloading west-1.5.0-py3-none-any.whl.metadata (19 kB)
+Collecting colorama (from west)
+  Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Requirement already satisfied: PyYAML>=5.1 in /usr/lib/python3/dist-packages (from west) (6.0.3)
+Collecting pykwalify (from west)
+  Downloading pykwalify-1.8.0-py2.py3-none-any.whl.metadata (5.3 kB)
+Requirement already satisfied: packaging in /usr/lib/python3/dist-packages (from west) (26.0)
+Collecting docopt>=0.6.2 (from pykwalify->west)
+  Downloading docopt-0.6.2.tar.gz (25 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: python-dateutil>=2.8.0 in /usr/lib/python3/dist-packages (from pykwalify->west) (2.9.0)
+Collecting ruamel.yaml>=0.16.0 (from pykwalify->west)
+  Downloading ruamel_yaml-0.19.1-py3-none-any.whl.metadata (16 kB)
+Downloading west-1.5.0-py3-none-any.whl (106 kB)
+Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Downloading pykwalify-1.8.0-py2.py3-none-any.whl (24 kB)
+Downloading ruamel_yaml-0.19.1-py3-none-any.whl (118 kB)
+Building wheels for collected packages: docopt
+  DEPRECATION: Building 'docopt' using the legacy setup.py bdist_wheel mechanism, which will be removed in a future version. pip 25.3 will enforce this behaviour change. A possible replacement is to use the standardized build interface by setting the `--use-pep517` option, (possibly combined with `--no-build-isolation`), or adding a `pyproject.toml` file to the source tree of 'docopt'. Discussion can be found at https://github.com/pypa/pip/issues/6334
+  Building wheel for docopt (setup.py): started
+  Building wheel for docopt (setup.py): finished with status 'done'
+  Created wheel for docopt: filename=docopt-0.6.2-py2.py3-none-any.whl size=13782 sha256=38324ea76e440452756be56180da1d3ac136c32361dbb74e0260ac33a4bcb1cf
+  Stored in directory: /home/runner/.cache/pip/wheels/79/6f/5f/26c3d1a144117ef52122d67c32b9f3c297c3dec4fea00a31ac
+Successfully built docopt
+Installing collected packages: docopt, ruamel.yaml, colorama, pykwalify, west
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Initialize west workspace (Force Correct URL)
-        run: |
-          pip3 install west
-          # 完全に正しいZMK公式リポジトリのフルURLを指定して初期化
-          west init -m https://github.com --mr main .
-          
-          # ローカルのconfigフォルダをZMKのシールド認識配下へ強制コピー
-          mkdir -p app/boards/shields/keyball61 2>/dev/null || true
-          cp -r config/* app/boards/shields/keyball61/ 2>/dev/null || true
-
-      - name: Update modules
-        run: |
-          west update
-          west zephyr-export
-
-      - name: Install Zephyr toolchain
-        run: |
-          wget https://github.com
-          tar -xf zephyr-sdk-0.16.3_linux-x86_64_minimal.tar.xz
-          ./zephyr-sdk-0.16.3/setup.sh -t arm-zephyr-eabi -c
-
-      - name: Build Keyball61 Right (ZMK Studio Enabled)
-        run: |
-          export ZEPHYR_SDK_INSTALL_DIR=$(pwd)/zephyr-sdk-0.16.3
-          west build -s app -b nice_nano_v2 -- -DSHIELD=keyball61_right -DZMK_CONFIG=$(pwd)/config
-
-      - name: Upload Firmware Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: keyball61_right_v2_with_studio
-          path: build/zephyr/zmk.uf2
+Successfully installed colorama-0.4.6 docopt-0.6.2 pykwalify-1.8.0 ruamel.yaml-0.19.1 west-1.5.0
+=== Initializing in /home/runner/work/zmk_kb61_gildacosta/zmk_kb61_gildacosta
+--- Cloning manifest repository from https://github.com, rev. main
+Cloning into '/home/runner/work/zmk_kb61_gildacosta/zmk_kb61_gildacosta/.west/manifest-tmp'...
+fatal: repository 'https://github.com/' not found
+FATAL ERROR: command exited with status 128: git clone --branch main https://github.com /home/runner/work/zmk_kb61_gildacosta/zmk_kb61_gildacosta/.west/manifest-tmp
+Error: Process completed with exit code 128.
