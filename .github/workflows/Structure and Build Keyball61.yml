@@ -1,69 +1,8 @@
-name: Build Keyball61 Right Hand Only with VIAL
+name: Build Keyball61 Right Hand Only
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: ghcr.io/qmk/qmk_cli:latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Disable git safe directory checks
-        run: git config --global --add safe.directory '*'
-
-      - name: Fix QMK CLI & Source Code Internal Python Bug
-        run: |
-          # 1. コンテナ側のQMK CLIライブラリを最新版に更新してPython 3.14互換エラー(ast.Num)を自動修正
-          python3 -m pip install --upgrade qmk --break-system-packages || true
-          
-          # 2. リポジトリのソースコード側（lib/python/qmk/math.py）の古い記述を安全に修正
-          REPO_MATH_PY="lib/python/qmk/math.py"
-          if [ -f "$REPO_MATH_PY" ]; then
-            sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$REPO_MATH_PY"
-          fi
-
-      - name: Configure Hardware & Enable VIAL (Right Hand & GP17)
-        run: |
-          CONFIG_FILE="keyboards/keyball/keyball61/config.h"
-          
-          # 既存の MASTER_LEFT 定義があれば削除し、MASTER_RIGHT を安全に追記
-          sed -i '/#define MASTER_LEFT/d' "$CONFIG_FILE"
-          echo "#define MASTER_RIGHT" >> "$CONFIG_FILE"
-          
-          # 既存の MATRIX_COL_PINS 定義を無効化（undef）した上で、新しいピン配列を追記
-          # ※ 親指キーを復活させるため、消えていた7本目のピン（GP12）を末尾に追加
-          echo "#undef MATRIX_COL_PINS" >> "$CONFIG_FILE"
-          echo "#define MATRIX_COL_PINS { GP20, GP19, GP18, GP17, GP14, GP13, GP12 }" >> "$CONFIG_FILE"
-
-          # VIAL用のキーマップディレクトリを新規作成
-          mkdir -p keyboards/keyball/keyball61/keymaps/vial
-          
-          # デフォルトのキーマップファイルをVIAL用ディレクトリに複製
-          if [ -d "keyboards/keyball/keyball61/keymaps/default" ]; then
-            cp -r keyboards/keyball/keyball61/keymaps/default/* keyboards/keyball/keyball61/keymaps/vial/ 2>/dev/null || true
-          fi
-          
-          # VIALおよびVIA機能を有効化する設定を rules.mk に書き込む
-          RULES_FILE="keyboards/keyball/keyball61/keymaps/vial/rules.mk"
-          echo "VIA_ENABLE = yes" >> "$RULES_FILE"
-          echo "VIAL_ENABLE = yes" >> "$RULES_FILE"
-          echo "LTO_ENABLE = yes" >> "$RULES_FILE"
-
-      - name: Compile Keyball61 with VIAL
-        run: qmk compile -kb keyball/keyball61 -km vial
-
-      - name: Upload Firmware Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: keyball61-vial-right-firmware
-          path: |
-            *.hex
-            *.bin
-            *.uf2
-          if-no-files-found: error
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
