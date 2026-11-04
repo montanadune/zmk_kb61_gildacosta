@@ -10,7 +10,7 @@ jobs:
       - name: Initialize west workspace (Force Correct URL)
         run: |
           pip3 install west
-          # 完全に正しいZMK公式リポジトリのフルURLを指定して初期化
+          # ZMK公式リポジトリの完全なURLを指定
           west init -m https://github.com --mr main .
           
           # ローカルのconfigフォルダをZMKのシールド認識配下へ強制コピー
