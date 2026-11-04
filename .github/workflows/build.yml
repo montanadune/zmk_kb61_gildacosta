@@ -1,58 +1,51 @@
-# This file specifies the build dependencies for Github Action workflows and
-# for local build environments. The workspace has three toplevel directories
-# containing the user config, user modules and ZMK. Zephyr and its dependencies
-# are namespaced under /zmk to keep the toplevel clean.
-#
-# ZMK-Workspace
-# ├── config
-# ├── modules (user modules)
-# └── zmk
-#     └── modules (Zephyr modules)
-#
-# To create a local build environment, clone this repository and then run the
-# following commands from its toplevel directory:
-#
-# $ west init -l config
-# $ west update
-# $ west zephyr-export
-#
----
-manifest:
-  remotes:
-    - name: inorichi
-      url-base: https://github.com/inorichi
-    - name: petejohanson
-      url-base: https://github.com/petejohanson
-    - name: stlimtat
-      url-base: https://github.com/stlimtat
-    - name: upstream
-      url-base: https://github.com/zmkfirmware
-    - name: urob
-      url-base: https://github.com/urob
+name: Build Firmware
 
-  projects:
-    - name: zmk-helpers
-      remote: urob
-      revision: main
-      path: modules/helpers
-    - name: zmk-auto-layer
-      remote: urob
-      revision: main
-      path: modules/auto-layer
-    - name: zmk-tri-state
-      remote: urob
-      revision: main
-      path: modules/tri-state
+on: [push, pull_request, workflow_dispatch]
 
-    # ZMK with Zephyr namespaced under /zmk. This requires that ZMK imports
-    # Zephyr with a path other than `zephyr` (as in `going-modular`).
-    - name: zmk
-      remote: stlimtat
-      revision: main
-      import: app/west.yml
-    - name: zmk-pmw3610-driver
-      remote: inorichi
-      revision: main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable # ZMKのビルド用公式コンテナを使用
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  self:
-    path: config
+      - name: Cache west modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-zephyr-modules
+        with:
+          path: |
+            modules/
+            zmk/
+            .west/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('config/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+
+      - name: Initialize west workspace
+        run: west init -l config
+
+      - name: Update modules
+        run: west update
+
+      - name: Export Zephyr CMake package
+        run: west zephyr-export
+
+      # --- ここから環境に合わせたビルドコマンド ---
+      # ※ Keyball61の左右をそれぞれビルドする例です（シールド名やボード名はご自身の環境に合わせてください）
+      - name: Build Right (Master)
+        run: west build -b nice_nano_v2 -- -DSHIELD=keyball61_right
+
+      - name: Build Left (Slave)
+        run: west build -b nice_nano_v2 -d build/left -- -DSHIELD=keyball61_left
+
+      # --- ビルドされたuf2ファイルを成果物として保存 ---
+      - name: Archive firmware
+        uses: actions/artifacts@v4
+        with:
+          name: keyball61-firmware
+          path: |
+            build/zephyr/zmk.uf2
+            build/left/zephyr/zmk.uf2
