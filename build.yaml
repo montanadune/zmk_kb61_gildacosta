@@ -1,7 +1,6 @@
-name: Build Keyball61 Right Hand Only
+name: zmk-build
 
-on:
-  workflow_dispatch:
+on: [workflow_dispatch]
 
 jobs:
   build:
