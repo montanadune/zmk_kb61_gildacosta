@@ -19,13 +19,14 @@ jobs:
 
       - name: Fix QMK CLI & Source Code Internal Python Bug
         run: |
-          # 1. コンテナ側のシステムPythonライブラリのバグを修正
-          SYS_MATH_PY="/usr/local/lib/python3.14/site-packages/qmk/math.py"
-          [ -f "$SYS_MATH_PY" ] && sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$SYS_MATH_PY"
+          # 1. コンテナ側のQMK CLIライブラリを最新版に更新してPython 3.14互換エラー(ast.Num)を自動修正
+          python3 -m pip install --upgrade qmk --break-system-packages || true
           
-          # 2. リポジトリのソースコード側（lib/python/qmk/math.py）のバグを修正
+          # 2. リポジトリのソースコード側（lib/python/qmk/math.py）の古い記述を安全に修正
           REPO_MATH_PY="lib/python/qmk/math.py"
-          [ -f "$REPO_MATH_PY" ] && sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$REPO_MATH_PY"
+          if [ -f "$REPO_MATH_PY" ]; then
+            sed -i 's/ast.Num/ast.Constant/g; s/node.n/node.value/g' "$REPO_MATH_PY"
+          fi
 
       - name: Configure Hardware & Enable VIAL (Right Hand & GP17)
         run: |
@@ -36,7 +37,7 @@ jobs:
           echo "#define MASTER_RIGHT" >> "$CONFIG_FILE"
           
           # 既存の MATRIX_COL_PINS 定義を無効化（undef）した上で、新しいピン配列を追記
-          # ※ 親指キーを復活させるため、消えていた7本目のピン（GP12）を末尾に追加しています
+          # ※ 親指キーを復活させるため、消えていた7本目のピン（GP12）を末尾に追加
           echo "#undef MATRIX_COL_PINS" >> "$CONFIG_FILE"
           echo "#define MATRIX_COL_PINS { GP20, GP19, GP18, GP17, GP14, GP13, GP12 }" >> "$CONFIG_FILE"
 
