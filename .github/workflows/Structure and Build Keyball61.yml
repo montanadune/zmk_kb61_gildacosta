@@ -34,12 +34,12 @@ jobs:
             cp src_repo/keyball61* unified_config/config/boards/shields/keyball61/ 2>/dev/null || true
           fi
 
-          # 3. 【エラーの根本解決】エラー原因となるwest.ymlを、動作実績のある標準的な内容で完全に新規作成（上書き）する
+          # 3. 【構文エラー修正】正しいWestの仕様（url-base）に合わせてwest.ymlを生成
           cat << 'EOF' > unified_config/config/west.yml
           manifest:
             remotes:
               - name: zmkfirmware
-                url: https://github.com
+                url-base: https://github.com
             projects:
               - name: zmk
                 remote: zmkfirmware
@@ -59,11 +59,11 @@ jobs:
           # ワークスペース直下(unified_config)で初期化を行う
           west init -l config
 
-      - name: West Update
+      - name: West Update (高速化版)
         working-directory: unified_config
         run: |
-          # ワークスペース直下でモジュールをアップデート
-          west update
+          # --narrow / --narrow-meta / --xml などを駆使して余計な履歴ダウンロードをスキップし、ビルドを高速化します
+          west update --narrow --narrow-meta --xml
           west zephyr-export
 
       - name: Build Keyball61 Left (左手用)
