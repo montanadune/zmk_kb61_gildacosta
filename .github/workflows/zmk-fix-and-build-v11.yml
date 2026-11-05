@@ -1,36 +1,14 @@
-on: [workflow_dispatch]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    container:
-      # 一般公開されている正式な検証済みバージョンを指定して403エラーを完全回避
-      image: ghcr.io/zmkfirmware/zmk-build-arm:3.5
-
-    steps:
-      - name: Checkout user config
-        uses: actions/checkout@v4
-
-      - name: Initialize West Workspace
-        run: |
-          # 文字千切れ対策を施した安定したコマンド実行
-          west init -m https://github.com --mr main zmk_workspace
-          cd zmk_workspace
-          west update
-          west zephyr-export
-
-      - name: Inject Keyball61 Configuration
-        run: |
-          mkdir -p zmk_workspace/app/boards/shields/keyball61
-          cp -r config/* zmk_workspace/app/boards/shields/keyball61/
-
-      - name: Build Keyball61 Right Firmware (ZMK Studio Enabled)
-        run: |
-          cd zmk_workspace
-          west build -s app -b nice_nano_v2 -- -DSHIELD=keyball61_right -DZMK_CONFIG=$(pwd)/app/boards/shields/keyball61
-
-      - name: Upload Firmware Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: keyball61_right_v2_with_studio
-          path: zmk_workspace/build/zephyr/zmk.uf2
+Checking docker version
+Clean up resources from previous jobs
+Create local container network
+Starting job container
+  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 login ghcr.io -u montanadune --password-stdin
+  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
+  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
+  Warning: Docker pull failed with exit code 1, back off 1.684 seconds before retry.
+  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
+  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
+  Warning: Docker pull failed with exit code 1, back off 8.262 seconds before retry.
+  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
+  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
+  Error: Docker pull failed with exit code 1
