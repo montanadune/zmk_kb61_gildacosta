@@ -1,4 +1,11 @@
-on: [workflow_dispatch]
+Check failure on line 1 in .github/workflows/zmk-fix-and-build-v11.yml
+
+
+GitHub Actions
+/ .github/workflows/zmk-fix-and-build-v11.yml
+Invalid workflow file
+
+reusable workflows should be referenced at the top-level `jobs.*.uses' key, not within steps
 
 jobs:
   build:
