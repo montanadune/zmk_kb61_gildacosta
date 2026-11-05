@@ -20,7 +20,7 @@ jobs:
 
       - name: Initialize West Workspace
         run: |
-          # ⭕ フォルダの手動作成をやめ、カレントディレクトリ自体をZMK環境としてクリーンに初期化します
+          # ⭕ ZMK公式リポジトリのフルURLを明示して zmk_workspace を初期化します
           west init -m https://github.com --mr main zmk_workspace
           cd zmk_workspace
           west update -n -o="--depth=1"
