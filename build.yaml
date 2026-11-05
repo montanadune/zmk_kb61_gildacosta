@@ -1,4 +1,2 @@
-
-include:
-  - board: nice_nano_v2
-    shield: keyball61_right
+# 外部の仕組みを一切使わず、あなたのconfigフォルダだけを読み込ませる正しい指定
+config_path: config
