@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir zmk_workspace
           cd zmk_workspace
-          # あなたのリポジトリにある config/west.yml を使って正しく初期化
+          # ⭕ 先に zmk_workspace に入ってから、そこをワークスペースとして初期化します
           west init -l ../src_repo/config
           west update -n -o="--depth=1"
           west zephyr-export
