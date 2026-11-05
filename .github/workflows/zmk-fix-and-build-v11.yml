@@ -1,4 +1,4 @@
-name: Build Keyball61
+name: Build Keyball61 Direct
 
 on:
   push:
@@ -9,4 +9,40 @@ on:
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    steps:
+      - name: Checkout User Repository
+        uses: actions/checkout@v4
+        with:
+          path: src_repo
+
+      - name: Initialize West Workspace
+        run: |
+          mkdir zmk_workspace
+          cd zmk_workspace
+          # あなたのリポジトリにある config/west.yml を使って正しく初期化
+          west init -l ../src_repo/config
+          west update -n -o="--depth=1"
+          west zephyr-export
+
+      - name: Build Keyball61 Left (左手用)
+        run: |
+          cd zmk_workspace
+          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=keyball61_left -DZMK_CONFIG="${GITHUB_WORKSPACE}/src_repo/config" -Wno-dev
+          mv build/zephyr/zmk.uf2 ../keyball61_left.uf2
+
+      - name: Build Keyball61 Right (右手用)
+        run: |
+          cd zmk_workspace
+          west build -s zmk/app -b nice_nano_v2 -d build_right -- -DSHIELD=keyball61_right -DZMK_CONFIG="${GITHUB_WORKSPACE}/src_repo/config" -Wno-dev
+          mv build_right/zephyr/zmk.uf2 ../keyball61_right.uf2
+
+      - name: Upload Firmware Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyball61-zmk-firmware
+          path: |
+            keyball61_left.uf2
+            keyball61_right.uf2
