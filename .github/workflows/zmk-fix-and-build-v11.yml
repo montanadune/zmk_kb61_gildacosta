@@ -1,14 +1,16 @@
-Checking docker version
-Clean up resources from previous jobs
-Create local container network
-Starting job container
-  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 login ghcr.io -u montanadune --password-stdin
-  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
-  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
-  Warning: Docker pull failed with exit code 1, back off 1.684 seconds before retry.
-  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
-  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
-  Warning: Docker pull failed with exit code 1, back off 8.262 seconds before retry.
-  /usr/bin/docker --config /home/runner/work/_temp/.docker_d45039dc-f3d0-41bb-a242-304da8488199 pull ghcr.io/zmkfirmware/zmk-build-arm:3.5
-  Error response from daemon: unknown: failed to resolve reference "ghcr.io/zmkfirmware/zmk-build-arm:3.5": unexpected status from HEAD request to https://ghcr.io/v2/zmkfirmware/zmk-build-arm/manifests/3.5: 403 Forbidden
-  Error: Docker pull failed with exit code 1
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout config
+        uses: actions/checkout@v4
+
+      - name: Setup Node Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Firmware via GitHub standard tool
+        uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
