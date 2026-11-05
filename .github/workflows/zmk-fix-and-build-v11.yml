@@ -12,6 +12,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install Compatible CMake 3.28 (Force Match)
+        run: |
+          # 最新のCMake 4による自爆エラーを完全に防ぐため、安定版の3.28.3を導入
+          wget https://github.com
+          chmod +x cmake-3.28.3-linux-x86_64.sh
+          sudo ./cmake-3.28.3-linux-x86_64.sh --skip-license --prefix=/usr/local
+          # 反映確認
+          cmake --version
+
       - name: Initialize west workspace (Force Clean Setup)
         run: |
           pip3 install west
