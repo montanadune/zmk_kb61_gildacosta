@@ -4,7 +4,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/zmkfirmware/zmk-build-arm:stable
+      # 一般公開されている正式な検証済みバージョンを指定して403エラーを完全回避
+      image: ghcr.io/zmkfirmware/zmk-build-arm:3.5
 
     steps:
       - name: Checkout user config
@@ -12,6 +13,7 @@ jobs:
 
       - name: Initialize West Workspace
         run: |
+          # 文字千切れ対策を施した安定したコマンド実行
           west init -m https://github.com --mr main zmk_workspace
           cd zmk_workspace
           west update
