@@ -20,10 +20,9 @@ jobs:
 
       - name: Initialize West Workspace
         run: |
-          mkdir zmk_workspace
+          # ⭕ フォルダの手動作成をやめ、カレントディレクトリ自体をZMK環境としてクリーンに初期化します
+          west init -m https://github.com --mr main zmk_workspace
           cd zmk_workspace
-          # ⭕ 先に zmk_workspace に入ってから、そこをワークスペースとして初期化します
-          west init -l ../src_repo/config
           west update -n -o="--depth=1"
           west zephyr-export
 
